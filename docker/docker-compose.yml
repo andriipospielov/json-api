@@ -1,0 +1,57 @@
+version: "3.7"
+
+services:
+
+    php-fpm:
+        container_name: json-api-php-fpm
+        image: json-api-php
+        env_file:
+          - ../.env
+        build:
+            context: ..
+            dockerfile: ${PWD}/docker/php-fpm/Dockerfile
+
+        restart: always
+        command: /startup/start-web.sh php-fpm
+        volumes:
+            - ${PWD}:/code
+        networks:
+            json-api-network:
+                aliases:
+                    - json-api-fpm
+
+    nginx:
+        container_name: json-api-nginx
+        volumes:
+            - ${PWD}/public:/code/public
+        build:
+            context: ..
+            dockerfile: ${PWD}/docker/nginx/Dockerfile
+        depends_on:
+                - php-fpm
+        ports:
+                - 8080:80
+        networks:
+            json-api-network:
+                aliases:
+                    - json-api-nginx
+    mysql:
+        container_name: json-api-db
+        image: mysql:5.7
+        environment:
+            - MYSQL_DATABASE=json-api
+            - MYSQL_ROOT_PASSWORD=mypass
+        volumes:
+            - ./mysql/data/:/var/lib/mysql/
+        networks:
+            json-api-network:
+                aliases:
+                    - json-api-db
+                    - db
+
+networks:
+    json-api-network:
+        external: true
+        driver: bridge
+
+
